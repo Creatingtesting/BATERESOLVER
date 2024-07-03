@@ -14,11 +14,9 @@ RunService.Stepped:Connect(function()
             if character then
                 local hrp = character:FindFirstChild("HumanoidRootPart")
                 if hrp then
-                    -- Fix the velocities
                     hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
                     hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 0, hrp.AssemblyLinearVelocity.Z)
                     
-                    -- Additional velocity fixers
                     hrp.AssemblyAngularVelocity = Vector3.new(hrp.AssemblyAngularVelocity.X, 0, hrp.AssemblyAngularVelocity.Z)
                     hrp.RotVelocity = Vector3.new(hrp.RotVelocity.X, 0, hrp.RotVelocity.Z)
                 end
