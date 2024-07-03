@@ -1,0 +1,71 @@
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Loaded EzterminalsResolver";
+    Text = "Enjoy locking!";
+})
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local function getTarget()
+    -- Find the closest target
+    local closestTarget = nil
+    local shortestDistance = math.huge
+
+    for i, v in pairs(Players:GetPlayers()) do
+        if v.Name ~= LocalPlayer.Name then
+            local character = v.Character
+            if character then
+                local hrp = character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local distance = (LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
+                    if distance < shortestDistance then
+                        shortestDistance = distance
+                        closestTarget = hrp
+                    end
+                end
+            end
+        end
+    end
+
+    return closestTarget
+end
+
+RunService.Heartbeat:Connect(function()
+    pcall(function()
+        local target = getTarget()
+        if target then
+            -- Lock the camera to the target
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+
+            for i, v in pairs(Players:GetPlayers()) do
+                if v.Name ~= LocalPlayer.Name then
+                    local character = v.Character
+                    if character then
+                        local hrp = character:FindFirstChild("HumanoidRootPart")
+                        if hrp then
+                            -- Preserve the player's original position and rotation
+                            local position = hrp.Position
+                            local orientation = hrp.Orientation
+                            
+                            -- Reset the CFrame to original position to counteract anti-lock methods
+                            hrp.CFrame = CFrame.new(position) * CFrame.Angles(math.rad(orientation.X), math.rad(orientation.Y), math.rad(orientation.Z))
+                            
+                            -- Fix the velocities
+                            hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
+                            hrp.AssemblyLinearVelocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
+                            
+                            -- Additional velocity fixers
+                            hrp.AssemblyAngularVelocity = Vector3.new(0, hrp.AssemblyAngularVelocity.Y, 0)
+                            hrp.RotVelocity = Vector3.new(0, hrp.RotVelocity.Y, 0)
+                        end
+                    end
+                end
+            end
+        else
+            -- If no target is found, reset the camera to the original state
+            Camera.CFrame = originalCameraCFrame
+        end
+    end)
+end)
