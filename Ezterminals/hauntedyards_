@@ -1,5 +1,5 @@
 game.StarterGui:SetCore("SendNotification", {
-    Title = "Loaded Universal Resolver";
+    Title = "Loaded Ezterminals Resolver";
     Text = "Enjoy locking!";
 })
 
