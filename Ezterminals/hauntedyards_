@@ -1,2 +1,69 @@
-game.StarterGui:SetCore("SendNotification", {
-    Title = "Loaded Universal Resolver";
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+-- Function to zero out Y velocity
+local function zeroOutYVelocity(hrp)
+    hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
+    hrp.AssemblyLinearVelocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
+end
+
+-- Function to handle character added
+local function onCharacterAdded(character)
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    zeroOutYVelocity(hrp)
+end
+
+-- Function to handle player added
+local function onPlayerAdded(player)
+    player.CharacterAdded:Connect(onCharacterAdded)
+    if player.Character then
+        onCharacterAdded(player.Character)
+    end
+end
+
+-- Function to handle player removing
+local function onPlayerRemoving(player)
+    player.CharacterAdded:Disconnect()
+end
+
+-- Connect PlayerAdded and PlayerRemoving events
+Players.PlayerAdded:Connect(onPlayerAdded)
+Players.PlayerRemoving:Connect(onPlayerRemoving)
+
+-- Zero out Y velocity for all players except local player on Heartbeat
+RunService.Heartbeat:Connect(function()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                zeroOutYVelocity(hrp)
+            end
+        end
+    end
+end)
+
+-- Global variables for custom velocity
+getgenv().VelocityChanger = true
+getgenv().Velocity = Vector3.new(200, 0, 200)
+
+-- Update local player's HumanoidRootPart velocity
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local RootPart = Character:WaitForChild("HumanoidRootPart")
+
+LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+    Character = newCharacter
+    RootPart = Character:WaitForChild("HumanoidRootPart")
+end)
+
+RunService.Heartbeat:Connect(function()
+    if VelocityChanger and RootPart then
+        local originalVelocity = RootPart.Velocity
+        RootPart.Velocity = Velocity
+        RunService.RenderStepped:Wait()
+        RootPart.Velocity = originalVelocity
+    end
+end)
+
+-- Load external script
+loadstring(game:HttpGet("https://raw.githubusercontent.com/kr4sk/Resolver/main/Res.lua", true))()
