@@ -1,1 +1,116 @@
-This github resolver is down, contact ezterminals for more info
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local function zeroOutYVelocity(hrp)
+    hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
+    hrp.AssemblyLinearVelocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
+end
+
+local function findRealHitbox(character)
+    local hitbox = character:FindFirstChild("Hitbox")
+    if hitbox then
+        return hitbox.Position
+    end
+    return nil
+end
+
+local function synchronizePlayer(player)
+    if player.Character then
+        local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.Position = hrp.Position
+        end
+    end
+end
+
+local function simulateNetworkSleep(player)
+    local character = player.Character
+    if character then
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.Velocity = Vector3.new(hrp.Velocity.X + math.random(-50, 50), hrp.Velocity.Y, hrp.Velocity.Z + math.random(-50, 50))
+            hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X + math.random(-50, 50), hrp.AssemblyLinearVelocity.Y, hrp.AssemblyLinearVelocity.Z + math.random(-50, 50))
+        end
+    end
+end
+
+local function recoverNetwork(player)
+    local character = player.Character
+    if character then
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            -- Recover by resetting to the server's known position
+            hrp.Position = hrp.Position
+        end
+    end
+end
+
+local function onCharacterAdded(character)
+    local hrp = character:WaitForChild("HumanoidRootPart")
+    zeroOutYVelocity(hrp)
+    synchronizePlayer(Players.LocalPlayer)
+end
+
+local function onPlayerAdded(player)
+    player.CharacterAdded:Connect(onCharacterAdded)
+    if player.Character then
+        onCharacterAdded(player.Character)
+    end
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+
+local function resolverDesync(player)
+    local character = player.Character
+    if character then
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.Velocity = Vector3.new(2000, 2000, 2000)
+            hrp.AssemblyLinearVelocity = Vector3.new(2000, 2000, 2000)
+            RunService.RenderStepped:Wait()
+            hrp.Velocity = Vector3.new(0, 0, 0)
+            hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        end
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                zeroOutYVelocity(hrp)
+                simulateNetworkSleep(player)
+                recoverNetwork(player)
+                local hitboxPosition = findRealHitbox(player.Character)
+                if hitboxPosition then
+                    print("Real hitbox position for player " .. player.Name .. ": " .. tostring(hitboxPosition))
+                end
+                resolverDesync(player)
+            end
+        end
+    end
+end)
+
+getgenv().VelocityChanger = true
+getgenv().Velocity = Vector3.new(0, 0, 0)
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local RootPart = Character:WaitForChild("HumanoidRootPart")
+
+LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+    Character = newCharacter
+    RootPart = Character:WaitForChild("HumanoidRootPart")
+end)
+
+RunService.Heartbeat:Connect(function()
+    if VelocityChanger and RootPart then
+        local originalVelocity = RootPart.Velocity
+        RootPart.Velocity = Velocity
+        RunService.RenderStepped:Wait()
+        RootPart.Velocity = originalVelocity
+    end
+end)
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/kr4sk/Resolver/main/Res.lua", true))()
